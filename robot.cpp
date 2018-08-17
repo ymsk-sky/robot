@@ -82,6 +82,8 @@ dReal hip_current_angle[2] = {0.0, 0.0};          // hip_jointの現在のヒン
 dReal ankle_current_angle[2] = {0.0, 0.0};        // ankle_jointの現在のヒンジ角度
 double tpos[3] = {0.0, 0.0, 0.0};                 // 物体の重心の座標
 
+bool space_trigger = false;
+
 // コールバック関数(衝突をジョイント拘束で実装している)
 static void nearCallback(void *data, dGeomID o1, dGeomID o2)
 {
@@ -121,6 +123,23 @@ static void nearCallback(void *data, dGeomID o1, dGeomID o2)
  * cogSensor: ロボットの重心を求める関数
  *             ロボットを構成するすべての剛体の重心と質量から、全体の重心を求めている
  */
+static void bodyRotation()
+{
+  const dReal *rot = dBodyGetRotation(body.body);
+  dReal r11, r12, r13, r21, r22, r23, r31, r32, r33;
+  dReal pitch, yaw, roll;
+
+  r11 = *(rot + 0); r12 = *(rot + 1); r13 = *(rot + 2);
+  r21 = *(rot + 4); r22 = *(rot + 5); r23 = *(rot + 6);
+  r31 = *(rot + 8); r32 = *(rot + 9); r33 = *(rot + 10);
+
+  pitch = atan2(-r31, sqrt(r32 * r32 + r33 * r33));
+  yaw = atan2(r21, r11);
+  roll = atan2(r32, r33);
+
+  printf("roll=%f\tpitch=%f\tyaw=%f\n", 180.0*roll/M_PI, 180.0*pitch*M_PI,
+         180.0*yaw/M_PI);
+}
 // ジョイント全ての現在の角度を求める
 static void angleSensor()
 {
@@ -166,6 +185,7 @@ static void cogSensor(double cog[3])
 // ジョイントの角度の可動域内かチェックする関数
 void checkAngleRange()
 {
+  // 角度が可動域を超えていたら最大値・最小値に設定する
   if(hip_target_angle[0] > HIP_MAX) hip_target_angle[0] = HIP_MAX;
   if(hip_target_angle[0] < HIP_MIN) hip_target_angle[0] = HIP_MIN;
   if(hip_target_angle[1] > HIP_MAX) hip_target_angle[1] = HIP_MAX;
@@ -179,7 +199,9 @@ void checkAngleRange()
 // その場で立ち続ける動作を行なう関数
 static void balance()
 {
-  //
+  if(space_trigger) {
+    //
+  }
 }
 
 // control(P制御)
@@ -347,8 +369,8 @@ void simLoop(int pause)
     control();        // 動作を制御する関数（commandでジョイントの角度を変更する）
 
     angleSensor();
-    printf("股関節\t右:%f\t左:%f\n", hip_current_angle[0], hip_current_angle[1]);
-    printf("足首\t右:%f\t左:%f\n", ankle_current_angle[0], ankle_current_angle[1]);
+    //printf("股関節\t右:%f\t左:%f\t", hip_current_angle[0], hip_current_angle[1]);
+    //printf("足首\t右:%f\t左:%f\n", ankle_current_angle[0], ankle_current_angle[1]);
   }
   drawRobot();
 }
@@ -423,6 +445,13 @@ static void command(int cmd)
     case 'o':
       cogSensor(tpos);
       printf("重心(%f, %f, %f)\n", tpos[0], tpos[1], tpos[2]);
+      break;
+    case ' ':
+      printf("space\n");
+      space_trigger = !space_trigger;
+      break;
+    case 'q':
+      bodyRotation();
       break;
     default:
       printf("cannot use button\n");
