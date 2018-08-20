@@ -11,7 +11,7 @@ The robot has two legs and two hinge joints each legs (sum=4.)
 ### for Mac
 1. install ODE
 2. clone robot.cpp
-3. compile
+3. g++ robot.cpp -lode -ldrawstuff -DdDOUBLE -framework GLUT -framework OpenGL -o robot
 4. ./robot
 
 ### for Visual Studio 2017 on Windows
