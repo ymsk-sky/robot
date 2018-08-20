@@ -119,12 +119,11 @@ static void nearCallback(void *data, dGeomID o1, dGeomID o2)
 }
 
 /***** ***** ***** センサ実装 ***** ***** *****/
-/*
- * cogSensor: ロボットの重心を求める関数
- *             ロボットを構成するすべての剛体の重心と質量から、全体の重心を求めている
- */
-static void bodyRotation()
+
+// body(胴体)のpitch,roll,yawを求めてprintする関数
+static void bodyRotation()  // todo 前後方向の角度さえ求められればよいが未完成
 {
+  // 内容はODE教本P150参照
   const dReal *rot = dBodyGetRotation(body.body);
   dReal r11, r12, r13, r21, r22, r23, r31, r32, r33;
   dReal pitch, yaw, roll;
@@ -151,6 +150,8 @@ static void angleSensor()
 // 重心を求める関数
 static void cogSensor(double cog[3])
 {
+  // ロボットを構成するすべての剛体の重心と質量から、全体の重心を求めている
+
   double mass[6];           // 6物体の重量
   double sum_mass = 0.0;    // 物体の質量の合計
 
@@ -200,14 +201,15 @@ void checkAngleRange()
 static void balance()
 {
   if(space_trigger) {
-    //
+    ankle_target_angle[0] = ANKLE_MIN;
   }
 }
 
 // control(P制御)
 static void control()
 {
-  double k1 = 10.0, fMax = 1000.0;
+  double k1 = 10.0;     // 比例定数
+  double fMax = 20.0;   // 最大トルク
 
   for(int i=0; i<NUM; i++) {
     double tmp_hip_target_angle = dJointGetHingeAngle(hip_joint[i]);
@@ -402,6 +404,8 @@ static void restart()
 
   hip_target_angle[0] = 0.0, hip_target_angle[1] = 0.0;
   ankle_target_angle[0] = 0.0, ankle_target_angle[1] = 0.0;
+
+  space_trigger = false;
 
   createRobot();
 }
