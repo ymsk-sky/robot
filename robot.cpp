@@ -136,7 +136,12 @@ static void bodyRotation()  // todo 前後方向の角度さえ求められれ�
   yaw = atan2(r21, r11);
   roll = atan2(r32, r33);
 
-  printf("roll=%f\tpitch=%f\tyaw=%f\n", 180.0*roll/M_PI, 180.0*pitch*M_PI,
+  if(true) {
+    //
+  }
+
+  //printf("roll=%f\tpitch=%f\tyaw=%f %f\n", roll, pitch, yaw, M_PI);
+  printf("roll=%f\tpitch=%f\tyaw=%f\n", 180.0*roll/M_PI, 180.0*pitch/M_PI,
          180.0*yaw/M_PI);
 }
 // ジョイント全ての現在の角度を求める
@@ -201,7 +206,13 @@ void checkAngleRange()
 static void balance()
 {
   if(space_trigger) {
-    ankle_target_angle[0] = ANKLE_MIN;
+    /*
+     * 1. センサの傾きを読み取る
+     *
+     */
+
+    //const dReal *value = dBodyGetAngularVel(head.body);
+    //printf("%f %f %f\n", value[0], value[1], value[2]);
   }
 }
 
