@@ -121,7 +121,7 @@ static void nearCallback(void *data, dGeomID o1, dGeomID o2)
 /***** ***** ***** センサ実装 ***** ***** *****/
 
 // body(胴体)のpitch,roll,yawを求めてprintする関数
-static void bodyRotation()  // todo 前後方向の角度さえ求められればよいが未完成
+static void bodyRotation()
 {
   // 内容はODE教本P150参照
   const dReal *rot = dBodyGetRotation(body.body);
@@ -135,10 +135,6 @@ static void bodyRotation()  // todo 前後方向の角度さえ求められれ�
   pitch = atan2(-r31, sqrt(r32 * r32 + r33 * r33));
   yaw = atan2(r21, r11);
   roll = atan2(r32, r33);
-
-  if(true) {
-    //
-  }
 
   //printf("roll=%f\tpitch=%f\tyaw=%f %f\n", roll, pitch, yaw, M_PI);
   printf("roll=%f\tpitch=%f\tyaw=%f\n", 180.0*roll/M_PI, 180.0*pitch/M_PI,
