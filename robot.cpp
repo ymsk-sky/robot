@@ -69,8 +69,8 @@ static const dReal BODY_L[3] = {0.20, 0.40, 0.50};  // 胴体(body)のxyz長パ�
 static const dReal FOOT_L[3] = {0.20, 0.02, 0.01};  // 足先(foot)のxyz長パラメータ
 
 /***** 各ジョイントの最大最小角度 *****/
-static const dReal HIP_MAX = M_PI/3;
-static const dReal HIP_MIN = -M_PI/3;
+static const dReal HIP_MAX =  2/15 * M_PI;          // 小三の歩幅を参照
+static const dReal HIP_MIN = -2/15 * M_PI;          // 小三の歩幅を参照
 static const dReal ANKLE_MAX = M_PI/3;
 static const dReal ANKLE_MIN = -M_PI/3;
 
@@ -421,33 +421,11 @@ static void restart()
 static void command(int cmd)
 {
   switch(cmd) {
-    case 'j': // hip R +
-      hip_target_angle[0] += 0.1;
-      break;
-    case 'k': // hip R -
-      hip_target_angle[0] -= 0.1;
-      break;
-    case 'n': // ankle R +
-      ankle_target_angle[0] += 0.1;
-      break;
-    case 'm': // ankle R -
-      ankle_target_angle[0] -= 0.1;
-      break;
-    case 'f': // hip L +
-      hip_target_angle[1] += 0.1;
-      break;
-    case 'd': // hip L -
-      hip_target_angle[1] -= 0.1;
-      break;
-    case 'v': // ankle L +
-      ankle_target_angle[1] += 0.1;
-      break;
-    case 'c': // ankle L -
-      ankle_target_angle[1] -= 0.1;
-      break;
     case 'a':
-      ankle_target_angle[0] = ANKLE_MIN / 2;
-      ankle_target_angle[1] = ANKLE_MIN / 2;
+      hip_target_angle[0] = HIP_MAX / 6;
+      hip_target_angle[1] = HIP_MAX / 6;
+      ankle_target_angle[0] = ANKLE_MIN * 2/3;
+      ankle_target_angle[1] = ANKLE_MIN * 2/3;
       break;
     case 'r':
       printf("restart\n");
