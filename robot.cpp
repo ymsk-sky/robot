@@ -1,17 +1,5 @@
 /*
  * 2018 / 07 / 25 作成
- * log20180726 必要関数作成・テンプレのみ記述、規定作成
- * log20180727 必要関数作成・コンパイル通過確認
- *             head, bodyのcreate, draw: エラー吐いてる
- * log20180730 エラー解消, 外見完成
- *             コントロールは../13_manipulator(DEMURA.NET)を参考にすると良いかも
- * log20180731 外見微修正
- * log20180801 pause対応, restart対応(destroyRobot関数 追加)
- *             control(P制御)できるようになった, bodyとfootのmをMyObjectで定義
- *             重心を求める関数(cogSensor)作成
- * log20180802 コントロール部修正
- * log20180809 balance関数追加
- * log20180816 github利用開始
  * 二足歩行ロボット（動歩行）シミュレーション
  * by yamasaki
  *
@@ -80,6 +68,7 @@ dReal ankle_target_angle[2] = {0.0, 0.0};         // ankle_jointの目標ヒン�
 
 dReal hip_current_angle[2] = {0.0, 0.0};          // hip_jointの現在のヒンジ角度
 dReal ankle_current_angle[2] = {0.0, 0.0};        // ankle_jointの現在のヒンジ角度
+dReal body_angle[3] = {0.0, 0.0, 0.0};            // bodyのxyz軸の回転
 double tpos[3] = {0.0, 0.0, 0.0};                 // 物体の重心の座標
 
 bool space_trigger = false;
@@ -120,8 +109,8 @@ static void nearCallback(void *data, dGeomID o1, dGeomID o2)
 
 /***** ***** ***** センサ実装 ***** ***** *****/
 
-// body(胴体)のpitch,roll,yawを求めてprintする関数
-static void bodyRotation()
+// body(胴体)のroll,pitch,yawを求める関数
+static void bodyRotation(dReal rpy[3])
 {
   // 内容はODE教本P150参照
   const dReal *rot = dBodyGetRotation(body.body);
@@ -132,13 +121,10 @@ static void bodyRotation()
   r21 = *(rot + 4); r22 = *(rot + 5); r23 = *(rot + 6);
   r31 = *(rot + 8); r32 = *(rot + 9); r33 = *(rot + 10);
 
-  pitch = atan2(-r31, sqrt(r32 * r32 + r33 * r33));
-  yaw = atan2(r21, r11);
-  roll = atan2(r32, r33);
-
-  //printf("roll=%f\tpitch=%f\tyaw=%f %f\n", roll, pitch, yaw, M_PI);
-  printf("roll=%f\tpitch=%f\tyaw=%f\n", 180.0*roll/M_PI, 180.0*pitch/M_PI,
-         180.0*yaw/M_PI);
+  // r:roll(x軸の回転), p:pitch(y軸の回転), y:yaw(z軸の回転)
+  rpy[0] = atan2(r32, r33) * 180.0 / M_PI;
+  rpy[1] = atan2(-r31, sqrt(r32 * r32 + r33 * r33)) * 180.0 / M_PI;
+  rpy[2] = atan2(r21, r11) * 180.0 / M_PI;
 }
 // ジョイント全ての現在の角度を求める
 static void angleSensor()
@@ -435,12 +421,13 @@ static void command(int cmd)
       cogSensor(tpos);
       printf("重心(%f, %f, %f)\n", tpos[0], tpos[1], tpos[2]);
       break;
+    case 'b':
+      bodyRotation(body_angle);
+      printf("胴体回転:%f %f %f\n", body_angle[0], body_angle[1], body_angle[2]);
+      break;
     case ' ':
       printf("space\n");
       space_trigger = !space_trigger;
-      break;
-    case 'q':
-      bodyRotation();
       break;
     default:
       printf("cannot use button\n");
