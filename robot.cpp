@@ -58,8 +58,8 @@ static const dReal BODY_L[3] = {0.20, 0.40, 0.50};  // 胴体(body)のxyz長パ�
 static const dReal FOOT_L[3] = {0.20, 0.02, 0.01};  // 足先(foot)のxyz長パラメータ
 
 /***** 各ジョイントの最大最小角度 *****/
-static const dReal HIP_MAX =  2/15 * M_PI;          // 小三の歩幅を参照
-static const dReal HIP_MIN = -2/15 * M_PI;          // 小三の歩幅を参照
+static const dReal HIP_MAX =  2.0/15.0 * M_PI;      // 小三の歩幅を参照
+static const dReal HIP_MIN = -2.0/15.0 * M_PI;      // 小三の歩幅を参照
 static const dReal ANKLE_MAX = M_PI/3;
 static const dReal ANKLE_MIN = -M_PI/3;
 
