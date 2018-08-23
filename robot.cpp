@@ -92,6 +92,8 @@ static void nearCallback(void *data, dGeomID o1, dGeomID o2)
   int n = dCollide(o1, o2, N, &contact[0].geom, sizeof(dContact));
   if(isGround) {
     for(int i=0; i<n; i++) {
+      // TODO 跳ね返り挙動がおかしいのでパラメータ調整
+
       contact[i].surface.mu = dInfinity;            // 摩擦係数
       contact[i].surface.mode = dContactBounce;     // 接触面の反発性を設定
       contact[i].surface.bounce = 0.0;              // 反発係数
