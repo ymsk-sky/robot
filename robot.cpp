@@ -72,7 +72,8 @@ dReal ankle_current_angle[2] = {0.0, 0.0};        // ankle_jointの現在のヒ�
 dReal body_angle[3] = {0.0, 0.0, 0.0};            // bodyのxyz軸の回転
 double tpos[3] = {0.0, 0.0, 0.0};                 // 物体の重心の座標
 
-bool space_trigger = false;
+bool space_trigger = false;     // スペースキー押下フラグ
+bool stand_flag = false;        // つま先立ちフラグ
 
 // コールバック関数(衝突をジョイント拘束で実装している)
 static void nearCallback(void *data, dGeomID o1, dGeomID o2)
@@ -192,14 +193,23 @@ static void balance()
 {
   if(space_trigger) {
     /*
-     * 1. つま先立ちする（両足首を回転）
-     * 2. 胴体(body)の傾きを確認
+     * 1. つま先立ちする（両足首を回転, 股関節で調整）
+     * 2. 胴体(body)の加速度or速度を確認（重心の移動を認識する）
      * 3. -
      * 4. -
      */
 
-    //const dReal *value = dBodyGetAngularVel(head.body);
-    //printf("%f %f %f\n", value[0], value[1], value[2]);
+    if(!stand_flag) {
+      stand_flag = true;
+      // TODO つま先立ちさせる
+    }
+    if(true && stand_flag) {
+      // TODO if条件文のtrue → "bodyに加速度があるなら"
+      // TODO bodyの加速度に応じてその加速度を相殺する動作を行なう
+
+      //const dReal *value = dBodyGetAngularVel(head.body);
+      //printf("%f %f %f\n", value[0], value[1], value[2]);
+    }
   }
 }
 
@@ -404,6 +414,7 @@ static void restart()
   ankle_target_angle[0] = 0.0, ankle_target_angle[1] = 0.0;
 
   space_trigger = false;
+  stand_flag = false;
 
   createRobot();
 }
