@@ -6,7 +6,8 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * 関数(function)のカッコは一行使う
  * ピリオドカンマの後に文字が続くときは半角スペースを入れる
- * ポインタのアスタリスクは変数名にくっつける
+ * ポインタのアスタリスクは変数名にくっつける ex)type *var
+ * タブは空白スペース2つ分
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 
@@ -24,8 +25,8 @@
 #define W 720     // グラフィックウィンドウの幅   Width
 #define H 450     // グラフィックウィンドウの高さ Height
 #define NUM 2     // 左右対称に組み立てる際に使用（左1右1で計2）
-#define HIP 0     // 股関節を指定
-#define ANKLE 1   // 足首を指定
+//#define HIP 0     // 股関節を指定  使ってない
+//#define ANKLE 1   // 足首を指定  使ってない
 
 typedef struct {  // MyObject構造体
   dBodyID body; // 剛体のID番号(動力学計算用)
@@ -60,7 +61,7 @@ static const dReal FOOT_L[3] = {0.20, 0.02, 0.01};  // 足先(foot)のxyz長パ�
 /***** 各ジョイントの最大最小角度 *****/
 static const dReal HIP_MAX =  2.0/15.0 * M_PI;      // 小三の歩幅を参照
 static const dReal HIP_MIN = -2.0/15.0 * M_PI;      // 小三の歩幅を参照
-static const dReal ANKLE_MAX = M_PI/3;
+static const dReal ANKLE_MAX =  M_PI/3;
 static const dReal ANKLE_MIN = -M_PI/3;
 
 /***** 変動するパラメータ *****/
@@ -70,6 +71,7 @@ dReal ankle_target_angle[2] = {0.0, 0.0};         // ankle_jointの目標ヒン�
 dReal hip_current_angle[2] = {0.0, 0.0};          // hip_jointの現在のヒンジ角度
 dReal ankle_current_angle[2] = {0.0, 0.0};        // ankle_jointの現在のヒンジ角度
 dReal body_angle[3] = {0.0, 0.0, 0.0};            // bodyのxyz軸の回転
+dReal body_angular_velocity[3] = {0.0, 0.0, 0.0}; // bodyのxyz軸の角速度
 double tpos[3] = {0.0, 0.0, 0.0};                 // 物体の重心の座標
 
 bool space_trigger = false;     // スペースキー押下フラグ
@@ -112,8 +114,16 @@ static void nearCallback(void *data, dGeomID o1, dGeomID o2)
 }
 
 /***** ***** ***** センサ実装 ***** ***** *****/
-
-// body(胴体)のroll,pitch,yawを求める関数
+// body(胴体)のxyz軸方向の角速度を取得する
+static void bodyAngularVelocity(dReal vel[3])
+{
+  const dReal *av;
+  av = dBodyGetAngularVel(body.body);
+  for(int i=0; i<3; i++) {
+    vel[i] = av[i];
+  }
+}
+// body(胴体)のroll,pitch,yawを取得する
 static void bodyRotation(dReal rpy[3])
 {
   // 内容はODE教本P150参照
@@ -200,13 +210,22 @@ static void balance()
      */
 
     if(!stand_flag) {
-      stand_flag = true;
-      // TODO つま先立ちさせる
+      // つま先立ちさせる
+      hip_target_angle[0] = HIP_MAX / 3;
+      hip_target_angle[1] = HIP_MAX / 3;
+      ankle_target_angle[0] = ANKLE_MIN * 2/3;
+      ankle_target_angle[1] = ANKLE_MIN * 2/3;
+
+      if(ankle_current_angle[0] < -0.60) {  // about ANKLE_MIN*2/3 is -0.60
+        stand_flag = true;
+      }
     }
     if(true && stand_flag) {
       // TODO if条件文のtrue → "bodyに加速度があるなら"
       // TODO bodyの加速度に応じてその加速度を相殺する動作を行なう
 
+      ankle_target_angle[0] = 0;
+      ankle_target_angle[1] = 0;
       //const dReal *value = dBodyGetAngularVel(head.body);
       //printf("%f %f %f\n", value[0], value[1], value[2]);
     }
@@ -423,7 +442,7 @@ static void restart()
 static void command(int cmd)
 {
   switch(cmd) {
-    case 'a':
+    case 'a': // temp debug
       hip_target_angle[0] = HIP_MAX / 6;
       hip_target_angle[1] = HIP_MAX / 6;
       ankle_target_angle[0] = ANKLE_MIN * 2/3;
@@ -437,16 +456,20 @@ static void command(int cmd)
       cogSensor(tpos);
       printf("重心(%f, %f, %f)\n", tpos[0], tpos[1], tpos[2]);
       break;
-    case 'b':
+    case 'b': // temp debug
       bodyRotation(body_angle);
       printf("胴体回転:%f %f %f\n", body_angle[0], body_angle[1], body_angle[2]);
+      break;
+    case 'v': // temp debug
+      bodyAngularVelocity(body_angular_velocity);
+      printf("胴体角速度:%f %f %f\n", body_angular_velocity[0], body_angular_velocity[1], body_angular_velocity[2]);
       break;
     case ' ':
       printf("space\n");
       space_trigger = !space_trigger;
       break;
     default:
-      printf("cannot use button\n");
+      printf("cannot use this button\n");
       break;
   }
 
