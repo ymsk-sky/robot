@@ -190,8 +190,10 @@ static void balance()
 {
   if(space_trigger) {
     /*
-     * 1. センサの傾きを読み取る
-     *
+     * 1. つま先立ちする（両足首を回転）
+     * 2. 胴体(body)の傾きを確認
+     * 3. -
+     * 4. -
      */
 
     //const dReal *value = dBodyGetAngularVel(head.body);
