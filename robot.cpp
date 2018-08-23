@@ -12,6 +12,7 @@
 
 #include <ode/ode.h>
 #include <drawstuff/drawstuff.h>
+//#include "texturepath.h"  // Windows,VS環境時
 
 #ifdef dDOUBLE
 #define dsDrawSphere dsDrawSphereD      // 球
@@ -96,7 +97,7 @@ static void nearCallback(void *data, dGeomID o1, dGeomID o2)
       contact[i].surface.bounce = 0.0;              // 反発係数
       contact[i].surface.bounce_vel = 0.0;          // 反発最低速度
       //contact[i].surface.soft_erp = 0.2;            // 関節誤差修正
-      //contact[i].surface.soft_cfm = 0.0001;         // 拘束力混合
+      //contact[i].surface.soft_cfm = 1e-5;           // 拘束力混合
 
       // 接触ジョイントの生成
       dJointID c = dJointCreateContact(world, contactgroup, &contact[i]);
@@ -471,6 +472,7 @@ void setDrawStuff()
   fn.step = &simLoop;                   // simLoop関数のポインタ
   fn.command = &command;                // command関数のポインタ
   fn.path_to_textures = "../textures";  // 読み込むテクスチャのパス
+  //fn.path_to_textures = DRAWSTUFF_TEXTURE_PATH; Windows, VS環境時
 }
 
 // main関数
