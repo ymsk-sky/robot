@@ -115,7 +115,7 @@ static void nearCallback(void *data, dGeomID o1, dGeomID o2)
 
 /***** ***** ***** センサ実装 ***** ***** *****/
 // body(胴体)のxyz軸方向の角速度を取得する
-static void bodyAngularVelocity(dReal vel[3])
+static void setBodyAngularVelocity(dReal vel[3])
 {
   const dReal *av;
   av = dBodyGetAngularVel(body.body);
@@ -124,7 +124,7 @@ static void bodyAngularVelocity(dReal vel[3])
   }
 }
 // body(胴体)のroll,pitch,yawを取得する
-static void bodyRotation(dReal rpy[3])
+static void setBodyAngle(dReal rpy[3])
 {
   // 内容はODE教本P150参照
   const dReal *rot = dBodyGetRotation(body.body);
@@ -216,16 +216,35 @@ static void balance()
       ankle_target_angle[0] = ANKLE_MIN * 2/3;
       ankle_target_angle[1] = ANKLE_MIN * 2/3;
 
-      if(ankle_current_angle[0] < -0.60) {  // about ANKLE_MIN*2/3 is -0.60
+      if(ankle_current_angle[0] < -0.60) {  // ANKLE_MIN*2/3 is about -0.60
         stand_flag = true;
       }
     }
-    if(true && stand_flag) {
-      // TODO if条件文のtrue → "bodyに加速度があるなら"
-      // TODO bodyの加速度に応じてその加速度を相殺する動作を行なう
 
-      ankle_target_angle[0] = 0;
-      ankle_target_angle[1] = 0;
+    setBodyAngularVelocity(body_angular_velocity);  // 胴体の角速度を求める
+    if(body_angular_velocity[1] != 0 && stand_flag) { // bav[1]:y軸方向の角速度
+      // TODO bodyの角速度に応じてその角速度を相殺する動作を行なう
+      // TODO 両足の角度を変更するだけでは立て直しが難しそう
+      //      片足を前/後に出して重心を逆に傾ける動作を実装する必要あり　
+      if(body_angular_velocity[1] < 0) {
+        // 前に倒す
+        hip_target_angle[0] = HIP_MAX;  // 今のままだと動きません
+        hip_target_angle[1] = HIP_MAX;
+        ankle_target_angle[0] = ANKLE_MIN * 1/3;
+        ankle_target_angle[1] = ANKLE_MIN * 1/3;
+        printf("後ろに倒れています\n");
+      }
+      if(body_angular_velocity[1] > 0) {
+        // 後ろに倒す
+        hip_target_angle[0] = HIP_MAX / 3;  // 今のままだと動きません
+        hip_target_angle[1] = HIP_MAX / 3;
+        ankle_target_angle[0] = ANKLE_MIN * 2/3;
+        ankle_target_angle[1] = ANKLE_MIN * 2/3;
+        printf("前に倒れています\n");
+      }
+      //ankle_target_angle[0] = 0;
+      //ankle_target_angle[1] = 0;
+
       //const dReal *value = dBodyGetAngularVel(head.body);
       //printf("%f %f %f\n", value[0], value[1], value[2]);
     }
@@ -457,11 +476,11 @@ static void command(int cmd)
       printf("重心(%f, %f, %f)\n", tpos[0], tpos[1], tpos[2]);
       break;
     case 'b': // temp debug
-      bodyRotation(body_angle);
+      setBodyAngle(body_angle);
       printf("胴体回転:%f %f %f\n", body_angle[0], body_angle[1], body_angle[2]);
       break;
     case 'v': // temp debug
-      bodyAngularVelocity(body_angular_velocity);
+      setBodyAngularVelocity(body_angular_velocity);
       printf("胴体角速度:%f %f %f\n", body_angular_velocity[0], body_angular_velocity[1], body_angular_velocity[2]);
       break;
     case ' ':
