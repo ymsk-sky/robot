@@ -201,6 +201,7 @@ void checkAngleRange()
 }
 
 // その場で立ち続ける動作を行なう関数
+bool raise_flag = false;  // TODO tmpフラグ あとで消す
 static void balance()
 {
   if(space_trigger) {
@@ -232,6 +233,17 @@ static void balance()
       if(body_angular_velocity[1] < 0) {
         // 前に倒す
         printf("後ろに倒れています\n");
+        if(!raise_flag) {
+          ankle_target_angle[0] = 0;
+          hip_target_angle[0] = HIP_MIN;
+          raise_flag = true;
+        }
+        if(hip_current_angle[0] < -0.4) {
+          ankle_target_angle[0] = ANKLE_MIN * 2/3;
+          hip_target_angle[0] = HIP_MAX/4;
+          //hip_target_angle[1] = HIP_MAX;
+        }
+        // TODO 足先に接触センサが必要
       }
       if(body_angular_velocity[1] > 0) {
         // 後ろに倒す
@@ -445,6 +457,9 @@ static void restart()
   stand_flag = false;
 
   STEP = 0;
+
+  // tmp
+  raise_flag = false;
 
   createRobot();
 }
