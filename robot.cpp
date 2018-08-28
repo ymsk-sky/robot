@@ -238,9 +238,9 @@ static void balance()
           hip_target_angle[0] = HIP_MIN;
           raise_flag = true;
         }
-        if(hip_current_angle[0] < -0.4) {
-          ankle_target_angle[0] = ANKLE_MIN * 2/3;
-          hip_target_angle[0] = HIP_MAX/4;
+        if(hip_current_angle[0] < -0.2) {
+          //ankle_target_angle[0] = ANKLE_MIN * 2/3;
+          //hip_target_angle[0] = HIP_MAX / 2;
           //hip_target_angle[1] = HIP_MAX;
         }
         // TODO 足先に接触センサが必要
