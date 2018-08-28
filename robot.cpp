@@ -77,6 +77,8 @@ double tpos[3] = {0.0, 0.0, 0.0};                 // 物体の重心の座標
 bool space_trigger = false;     // スペースキー押下フラグ
 bool stand_flag = false;        // つま先立ちフラグ
 
+int STEP = 0;
+
 // コールバック関数(衝突をジョイント拘束で実装している)
 static void nearCallback(void *data, dGeomID o1, dGeomID o2)
 {
@@ -199,6 +201,7 @@ void checkAngleRange()
 }
 
 // その場で立ち続ける動作を行なう関数
+bool raise_flag = false;  // TODO tmpフラグ あとで消す
 static void balance()
 {
   if(space_trigger) {
@@ -223,30 +226,29 @@ static void balance()
 
     setBodyAngularVelocity(body_angular_velocity);  // 胴体の角速度を求める
     if(body_angular_velocity[1] != 0 && stand_flag) { // bav[1]:y軸方向の角速度
+      printf("%3d: ", STEP++);
       // TODO bodyの角速度に応じてその角速度を相殺する動作を行なう
       // TODO 両足の角度を変更するだけでは立て直しが難しそう
-      //      片足を前/後に出して重心を逆に傾ける動作を実装する必要あり　
+      //      片足を前/後に出して重心を逆に傾ける動作を実装する必要あり
       if(body_angular_velocity[1] < 0) {
         // 前に倒す
-        hip_target_angle[0] = HIP_MAX;  // 今のままだと動きません
-        hip_target_angle[1] = HIP_MAX;
-        ankle_target_angle[0] = ANKLE_MIN * 1/3;
-        ankle_target_angle[1] = ANKLE_MIN * 1/3;
         printf("後ろに倒れています\n");
+        if(!raise_flag) {
+          ankle_target_angle[0] = 0;
+          hip_target_angle[0] = HIP_MIN;
+          raise_flag = true;
+        }
+        if(hip_current_angle[0] < -0.2) {
+          //ankle_target_angle[0] = ANKLE_MIN * 2/3;
+          //hip_target_angle[0] = HIP_MAX / 2;
+          //hip_target_angle[1] = HIP_MAX;
+        }
+        // TODO 足先に接触センサが必要
       }
       if(body_angular_velocity[1] > 0) {
         // 後ろに倒す
-        hip_target_angle[0] = HIP_MAX / 3;  // 今のままだと動きません
-        hip_target_angle[1] = HIP_MAX / 3;
-        ankle_target_angle[0] = ANKLE_MIN * 2/3;
-        ankle_target_angle[1] = ANKLE_MIN * 2/3;
         printf("前に倒れています\n");
       }
-      //ankle_target_angle[0] = 0;
-      //ankle_target_angle[1] = 0;
-
-      //const dReal *value = dBodyGetAngularVel(head.body);
-      //printf("%f %f %f\n", value[0], value[1], value[2]);
     }
   }
 }
@@ -255,7 +257,7 @@ static void balance()
 static void control()
 {
   double k1 = 10.0;     // 比例定数
-  double fMax = 20.0;   // 最大トルク
+  double fMax = 100.0;   // 最大トルク
 
   for(int i=0; i<NUM; i++) {
     double tmp_hip_target_angle = dJointGetHingeAngle(hip_joint[i]);
@@ -453,6 +455,11 @@ static void restart()
 
   space_trigger = false;
   stand_flag = false;
+
+  STEP = 0;
+
+  // tmp
+  raise_flag = false;
 
   createRobot();
 }
