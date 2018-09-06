@@ -238,9 +238,9 @@ static void balance()
           hip_target_angle[0] = HIP_MIN;
           raise_flag = true;
         }
-        if(hip_current_angle[0] < -0.2) {
-          //ankle_target_angle[0] = ANKLE_MIN * 2/3;
-          //hip_target_angle[0] = HIP_MAX / 2;
+        if(hip_current_angle[0] < -0.25) {
+          ankle_target_angle[0] = ANKLE_MIN;
+          hip_target_angle[0] = HIP_MAX/2;
           //hip_target_angle[1] = HIP_MAX;
         }
         // TODO 足先に接触センサが必要
@@ -306,11 +306,6 @@ void drawRobot()
 // ロボットを創造する関数
 void createRobot()
 {
-  // 重心位置として定義したが使用していない(20180730)
-  dReal x0 = 0.00;                  // X軸 初期位置
-  dReal y0 = 0.00;                  // Y軸 初期位置
-  dReal z0 = 0.70;                  // Z軸 初期位置
-
   head.r = 0.10;                    // 頭(head)の半径r
   head.m = 4.0;                     // 頭(head)の質量m
 
@@ -321,11 +316,12 @@ void createRobot()
     leg[i].l = 0.59 - leg[i].r * 2; // 脚(leg)の長さl
     leg[i].m = 1.50;                // 脚(leg)の質量m
 
-    foot[i].m = 0.50;                  // 足先(foot)の質量m
+    foot[i].m = 0.50;               // 足先(foot)の質量m
   }
 
   dMass mass;
 
+  double rise = 0.07;               // つま先立ち状態のマージン
   /***** MyObject *****/
   // 頭【球 - sphere】
   head.body = dBodyCreate(world);
@@ -333,7 +329,7 @@ void createRobot()
   dMassSetSphereTotal(&mass, head.m, head.r);
   dBodySetMass(head.body, &mass);
   dBodySetPosition(head.body, 0.0, 0.0,
-                    FOOT_L[2] + leg[0].l + 2*leg[0].r + BODY_L[2] + head.r);
+                    FOOT_L[2] + leg[0].l + 2*leg[0].r + BODY_L[2] + head.r + rise);
 
   head.geom = dCreateSphere(space, head.r);
   dGeomSetBody(head.geom, head.body);
@@ -344,7 +340,7 @@ void createRobot()
   dMassSetBoxTotal(&mass, body.m, BODY_L[0], BODY_L[1], BODY_L[2]);
   dBodySetMass(body.body, &mass);
   dBodySetPosition(body.body, 0.0, 0.0,
-                    FOOT_L[2] + leg[0].l + 2*leg[0].r + BODY_L[2]/2);
+                    FOOT_L[2] + leg[0].l + 2*leg[0].r + BODY_L[2]/2 + rise);
 
   body.geom = dCreateBox(space, BODY_L[0], BODY_L[1], BODY_L[2]);
   dGeomSetBody(body.geom, body.body);
@@ -360,9 +356,9 @@ void createRobot()
     dGeomSetBody(leg[i].geom, leg[i].body);
   }
   dBodySetPosition(leg[0].body, 0.0, -BODY_L[1]/4,
-                                FOOT_L[2] + leg[0].r + leg[0].l/2);
+                                FOOT_L[2] + leg[0].r + leg[0].l/2 + rise);
   dBodySetPosition(leg[1].body, 0.0,  BODY_L[1]/4,
-                                FOOT_L[2] + leg[0].r + leg[1].l/2);
+                                FOOT_L[2] + leg[0].r + leg[1].l/2 + rise);
 
   // 足先【直方体 - box】
   for(int i=0; i<NUM; i++) {
@@ -373,8 +369,12 @@ void createRobot()
     foot[i].geom = dCreateBox(space, FOOT_L[0], FOOT_L[1], FOOT_L[2]);
     dGeomSetBody(foot[i].geom, foot[i].body);
   }
-  dBodySetPosition(foot[0].body, 0.05, -BODY_L[1]/4, FOOT_L[2]/2);
-  dBodySetPosition(foot[1].body, 0.05,  BODY_L[1]/4, FOOT_L[2]/2);
+  dBodySetPosition(foot[0].body, 0.05, -BODY_L[1]/4, FOOT_L[2]/2 + rise);
+  dBodySetPosition(foot[1].body, 0.05,  BODY_L[1]/4, FOOT_L[2]/2 + rise);
+  // 初期状態の回転をセットする
+  const dMatrix3 init_foot_R = {1,0,0,0, 0,1,0,0, -1,0,0,0};
+  dBodySetRotation(foot[0].body, init_foot_R);
+  dBodySetRotation(foot[1].body, init_foot_R);
 
   /***** ジョイント *****/
   // head - body
@@ -391,9 +391,9 @@ void createRobot()
     dJointSetHingeParam(hip_joint[i], dParamHiStop,  M_PI/3);
   }
   dJointSetHingeAnchor(hip_joint[0], 0.0, -BODY_L[1]/4,
-                                     FOOT_L[2] + leg[0].l);
+                                     FOOT_L[2] + leg[0].l + rise);
   dJointSetHingeAnchor(hip_joint[1], 0.0,  BODY_L[1]/4,
-                                     FOOT_L[2] + leg[1].l);
+                                     FOOT_L[2] + leg[1].l + rise);
 
   // leg - foot
   for(int i=0; i<NUM; i++) {
@@ -403,8 +403,8 @@ void createRobot()
     dJointSetHingeParam(ankle_joint[i], dParamLoStop, -M_PI/3);
     dJointSetHingeParam(ankle_joint[i], dParamHiStop,  M_PI/3);
   }
-  dJointSetHingeAnchor(ankle_joint[0], 0.0, -BODY_L[1]/4, FOOT_L[2]/4);
-  dJointSetHingeAnchor(ankle_joint[1], 0.0,  BODY_L[1]/4, FOOT_L[2]/4);
+  dJointSetHingeAnchor(ankle_joint[0], 0.0, -BODY_L[1]/4, FOOT_L[2]/4 + rise);
+  dJointSetHingeAnchor(ankle_joint[1], 0.0,  BODY_L[1]/4, FOOT_L[2]/4 + rise);
 }
 
 // シミュレーションループ
@@ -418,9 +418,7 @@ void simLoop(int pause)
     balance();        // 立ち続ける関数
     control();        // 動作を制御する関数（commandでジョイントの角度を変更する）
 
-    angleSensor();
-    //printf("股関節\t右:%f\t左:%f\t", hip_current_angle[0], hip_current_angle[1]);
-    //printf("足首\t右:%f\t左:%f\n", ankle_current_angle[0], ankle_current_angle[1]);
+    angleSensor();    // 全ジョイントの現在の角度を更新
   }
   drawRobot();
 }
