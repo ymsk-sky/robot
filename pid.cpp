@@ -23,6 +23,14 @@ dsFunctions fn;
 MyObject base, obj;
 dJointID b, j;
 
+// 目標角度
+double target = M_PI / 4;
+
+static double dt = 0.01;   // ループ間隔
+
+double i_sum = 0.0;        // 積分用
+double pre_d = 0.0;        // 前回の差分を保存する用
+
 static void nearCallback(void *data, dGeomID o1, dGeomID o2)
 {
   static const int N = 10;
@@ -49,7 +57,6 @@ static void nearCallback(void *data, dGeomID o1, dGeomID o2)
   }
 }
 
-double target = M_PI / 4;
 static void P_control()
 {
   double Kp = 10.0;   // 比例ゲイン
@@ -60,7 +67,37 @@ static void P_control()
 
   dJointSetHingeParam(j, dParamVel, Kp*v);
   dJointSetHingeParam(j, dParamFMax, fMax);
+}
 
+static void PI_control()
+{
+  double Kp = 5.0; // 比例ゲイン
+  double Ki = 1.0;  // 積分ゲイン
+  double fMax = 100.0;
+
+  double current = dJointGetHingeAngle(j);
+  double d = target - current;
+
+  i_sum = i_sum + d * dt / 1000000.0;
+
+  dJointSetHingeParam(j, dParamVel, Kp*d + Ki*i_sum);
+  dJointSetHingeParam(j, dParamFMax, fMax);
+}
+
+static void PID_control()
+{
+  double Kp = 5.0;  // 比例ゲイン
+  double Ki = 1.0;  // 積分ゲイン
+  double Kd = 1.0;  // 微分ゲイン
+  double fMax = 100.0;
+
+  double current = dJointGetHingeAngle(j);
+  double d = target - current;
+  double dd = d - pre_d;
+  pre_d = d;
+
+  dJointSetHingeParam(j, dParamVel, Kp*d + Ki*i_sum + Kd*dd);
+  dJointSetHingeParam(j, dParamFMax, fMax);
 }
 
 void drawObj()
@@ -125,7 +162,9 @@ void simLoop(int pause)
 
     double d = dJointGetHingeAngle(j);
     printf("%f\n", d);
-    P_control();
+    PID_control();
+
+    dt = dt + 0.01;
   }
   drawObj();
 }
@@ -149,7 +188,6 @@ static void restart()
   createObj();
 }
 
-double val = 0.01;
 void command(int cmd)
 {
   switch(cmd) {
@@ -157,10 +195,8 @@ void command(int cmd)
       restart();
       break;
     case ' ':
-      printf("space: val=%f\n", val);
-      dWorldSetGravity(world, val, val, -9.81);
-      if(val == 0.01) val = 0.00;
-      else val = 0.01;
+      printf("target change\n");
+      target = -M_PI/4;
       break;
     default:
       printf("not command");
