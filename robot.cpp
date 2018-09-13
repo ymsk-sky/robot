@@ -490,9 +490,9 @@ void createRobot()
     dJointSetHingeParam(hip_joint[i], dParamHiStop, HIP_MAX);
   }
   dJointSetHingeAnchor(hip_joint[0], 0.0, -BODY_L[1]/4,
-                                     FOOT_L[2] + leg[0].l + rise);
+                                     FOOT_L[2] + leg[0].l + 2*leg[0].r + rise);
   dJointSetHingeAnchor(hip_joint[1], 0.0,  BODY_L[1]/4,
-                                     FOOT_L[2] + leg[1].l + rise);
+                                     FOOT_L[2] + leg[1].l + 2*leg[1].r + rise);
 
   // leg - foot
   for(int i=0; i<NUM; i++) {
@@ -502,8 +502,10 @@ void createRobot()
     dJointSetHingeParam(ankle_joint[i], dParamLoStop, ANKLE_MIN);
     dJointSetHingeParam(ankle_joint[i], dParamHiStop, ANKLE_MAX);
   }
-  dJointSetHingeAnchor(ankle_joint[0], 0.0, -BODY_L[1]/4, FOOT_L[2]/4 + rise);
-  dJointSetHingeAnchor(ankle_joint[1], 0.0,  BODY_L[1]/4, FOOT_L[2]/4 + rise);
+  dJointSetHingeAnchor(ankle_joint[0], 0.0, -BODY_L[1]/4,
+                                        FOOT_L[2] + rise);
+  dJointSetHingeAnchor(ankle_joint[1], 0.0,  BODY_L[1]/4,
+                                        FOOT_L[2] + rise);
 }
 
 // シミュレーションループ
