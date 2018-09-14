@@ -13,6 +13,7 @@
 
 #include <ode/ode.h>
 #include <drawstuff/drawstuff.h>
+#include <math.h>
 //#include "texturepath.h"  // Windows,VS環境時
 
 #ifdef dDOUBLE
@@ -66,25 +67,22 @@ static const dReal FOOT_L[3] = {0.20, 0.02, 0.01};  // 足先(foot)のxyz長パ�
 /***** 各ジョイントの最大最小角度 *****/
 static const dReal SHOULDER_MAX =  M_PI/2;
 static const dReal SHOULDER_MIN = -M_PI/2;
-static const dReal HIP_MAX =  2.0/15.0 * M_PI;      // 小三の歩幅を参照
-static const dReal HIP_MIN = -2.0/15.0 * M_PI;      // 小三の歩幅を参照
-static const dReal ANKLE_MAX =  M_PI/3;
-static const dReal ANKLE_MIN = -M_PI/3;
+static const dReal HIP_MAX =  3.0 * M_PI/180.0; // 小三の歩幅( 2.0/15.0 * M_PI)を参照
+static const dReal HIP_MIN = -3.0 * M_PI/180.0; // 小三の歩幅(-2.0/15.0 * M_PI)を参照
+static const dReal ANKLE_MAX =  M_PI;
+static const dReal ANKLE_MIN = -M_PI;
 
 /***** 変動するパラメータ *****/
 dReal shoulder_target_angle[NUM] = {0.0, 0.0};    // shoulder_jointの目標ヒンジ角度
-dReal hip_target_angle[NUM] = {0.0, 0.0};         // hip_jointの目標ヒンジ角度
-dReal ankle_target_angle[NUM] = {0.0, 0.0};       // ankle_jointの目標ヒンジ角度
+dReal      hip_target_angle[NUM] = {0.0, 0.0};    // hip_jointの目標ヒンジ角度
+dReal    ankle_target_angle[NUM] = {0.0, 0.0};    // ankle_jointの目標ヒンジ角度
 
 dReal shoulder_current_angle[NUM] = {0.0, 0.0};   // shoulder_jointの現在のヒンジ角度
-dReal hip_current_angle[NUM] = {0.0, 0.0};        // hip_jointの現在のヒンジ角度
-dReal ankle_current_angle[NUM] = {0.0, 0.0};      // ankle_jointの現在のヒンジ角度
-dReal body_angle[3] = {0.0, 0.0, 0.0};            // bodyのxyz軸の回転
+dReal      hip_current_angle[NUM] = {0.0, 0.0};   // hip_jointの現在のヒンジ角度
+dReal    ankle_current_angle[NUM] = {0.0, 0.0};   // ankle_jointの現在のヒンジ角度
+dReal            body_angle[3] = {0.0, 0.0, 0.0}; // bodyのxyz軸の回転
 dReal body_angular_velocity[3] = {0.0, 0.0, 0.0}; // bodyのxyz軸の角速度
 double tpos[3] = {0.0, 0.0, 0.0};                 // 物体の重心の座標
-
-bool space_trigger = false;     // スペースキー押下フラグ
-bool stand_flag = false;        // つま先立ちフラグ
 
 int STEP = 0;
 
@@ -226,56 +224,9 @@ void checkAngleRange()
 }
 
 // その場で立ち続ける動作を行なう関数
-bool raise_flag = false;  // TODO tmpフラグ あとで消す
 static void balance()
 {
-  if(space_trigger) {
-    /*
-     * 1. つま先立ちする（両足首を回転, 股関節で調整）
-     * 2. 胴体(body)の加速度or速度を確認（重心の移動を認識する）
-     * 3. -
-     * 4. -
-     */
-
-    if(!stand_flag) {
-      // つま先立ちさせる
-      hip_target_angle[0] = HIP_MAX / 3;
-      hip_target_angle[1] = HIP_MAX / 3;
-      ankle_target_angle[0] = ANKLE_MIN * 2/3;
-      ankle_target_angle[1] = ANKLE_MIN * 2/3;
-
-      if(ankle_current_angle[0] < -0.60) {  // ANKLE_MIN*2/3 is about -0.60
-        stand_flag = true;
-      }
-    }
-
-    setBodyAngularVelocity(body_angular_velocity);  // 胴体の角速度を求める
-    if(body_angular_velocity[1] != 0 && stand_flag) { // bav[1]:y軸方向の角速度
-      printf("%3d: ", STEP++);
-      // TODO bodyの角速度に応じてその角速度を相殺する動作を行なう
-      // TODO 両足の角度を変更するだけでは立て直しが難しそう
-      //      片足を前/後に出して重心を逆に傾ける動作を実装する必要あり
-      if(body_angular_velocity[1] < 0) {
-        // 前に倒す
-        printf("後ろに倒れています\n");
-        if(!raise_flag) {
-          ankle_target_angle[0] = 0;
-          hip_target_angle[0] = HIP_MIN;
-          raise_flag = true;
-        }
-        if(hip_current_angle[0] < -0.25) {
-          ankle_target_angle[0] = ANKLE_MIN;
-          hip_target_angle[0] = HIP_MAX/2;
-          //hip_target_angle[1] = HIP_MAX;
-        }
-        // TODO 足先に接触センサが必要
-      }
-      if(body_angular_velocity[1] > 0) {
-        // 後ろに倒す
-        printf("前に倒れています\n");
-      }
-    }
-  }
+  //
 }
 
 // control(P制御)
@@ -295,9 +246,6 @@ static void control()
     dJointSetHingeParam(ankle_joint[i], dParamVel, k1*a);
     dJointSetHingeParam(ankle_joint[i], dParamFMax, fMax);
   }
-
-  //printf("股関節 右:%f 左:%f ", hip_target_angle[0], hip_target_angle[1]);
-  //printf("足首 右:%f 左:%f\n", ankle_target_angle[0], ankle_target_angle[1]);
 }
 
 // ロボットを描画する関数
@@ -365,7 +313,7 @@ void createRobot()
 
   dMass mass;
 
-  double rise = 0.08;               // つま先立ち状態のマージン
+  double rise = sqrt(2)/4 * FOOT_L[1] + FOOT_L[2]; // つま先立ち状態のマージン
   /***** MyObject *****/
   // 頭【球 - sphere】
   head.body = dBodyCreate(world);
@@ -446,12 +394,12 @@ void createRobot()
     foot[i].geom = dCreateBox(space, FOOT_L[0], FOOT_L[1], FOOT_L[2]);
     dGeomSetBody(foot[i].geom, foot[i].body);
   }
-  dBodySetPosition(foot[0].body, 0.05, -BODY_L[1]/4, FOOT_L[2]/2 + rise);
-  dBodySetPosition(foot[1].body, 0.05,  BODY_L[1]/4, FOOT_L[2]/2 + rise);
+  dBodySetPosition(foot[0].body, 0.0, -BODY_L[1]/4, FOOT_L[2]/2 + rise);
+  dBodySetPosition(foot[1].body, 0.0,  BODY_L[1]/4, FOOT_L[2]/2 + rise);
   // 初期状態の回転をセットする
-  const dMatrix3 init_foot_R = {1,0,0,0, 0,1,0,0, -1,0,0,0};
-  dBodySetRotation(foot[0].body, init_foot_R);
-  dBodySetRotation(foot[1].body, init_foot_R);
+  //const dMatrix3 init_foot_R = {1,0,0,0, 0,1,0,0, -1,0,0,0};
+  //dBodySetRotation(foot[0].body, init_foot_R);
+  //dBodySetRotation(foot[1].body, init_foot_R);
 
   /***** ジョイント *****/
   // head - body
@@ -552,13 +500,7 @@ static void restart()
   hip_target_angle[0] = 0.0, hip_target_angle[1] = 0.0;
   ankle_target_angle[0] = 0.0, ankle_target_angle[1] = 0.0;
 
-  space_trigger = false;
-  stand_flag = false;
-
   STEP = 0;
-
-  // tmp
-  raise_flag = false;
 
   createRobot();
 }
@@ -567,12 +509,6 @@ static void restart()
 static void command(int cmd)
 {
   switch(cmd) {
-    case 'a': // temp debug
-      hip_target_angle[0] = HIP_MAX / 6;
-      hip_target_angle[1] = HIP_MAX / 6;
-      ankle_target_angle[0] = ANKLE_MIN * 2/3;
-      ankle_target_angle[1] = ANKLE_MIN * 2/3;
-      break;
     case 'r':
       printf("restart\n");
       restart();
@@ -590,8 +526,6 @@ static void command(int cmd)
       printf("胴体角速度:%f %f %f\n", body_angular_velocity[0], body_angular_velocity[1], body_angular_velocity[2]);
       break;
     case ' ':
-      printf("space\n");
-      space_trigger = !space_trigger;
       break;
     default:
       printf("cannot use this button\n");
